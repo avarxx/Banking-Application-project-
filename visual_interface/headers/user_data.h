@@ -23,6 +23,7 @@ struct User {
   bool WasAdressed = false;
   bool HasId = false;
   size_t passport_id = 0;
+  // bool Status = false;
   User() = default;
   User(const std::string& user_name, const std::string& user_surname);
   User(const std::string& user_name, const std::string& user_surname,

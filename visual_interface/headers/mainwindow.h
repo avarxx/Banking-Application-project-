@@ -64,7 +64,7 @@ private:
     void populateTransactionsTable();
     void populateBanksTable();
 
-    void showEditClientDialog(const UserName& userName);
+    void showEditClientDialog();
     void deleteClient();
     void showDepositDialog();
     void showWithdrawDialog();

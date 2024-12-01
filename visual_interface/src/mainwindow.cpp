@@ -1,5 +1,6 @@
 #include "../headers/mainwindow.h"
 
+#include <QInputDialog>
 #include <QMessageBox>
 
 MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent) {
@@ -29,7 +30,7 @@ MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent) {
   mainLayout->addWidget(tabWidget);
   setCentralWidget(centralWidget);
 
-  //createMenuBar();
+  // createMenuBar();
 }
 
 void MainWindow::createMenuBar() {
@@ -63,43 +64,136 @@ void MainWindow::createClientsTab(QWidget *parent) {
   clientsModel->setHorizontalHeaderLabels(
       {"ID", "Name", "Surname", "Address", "Passport", "Accounts", "Status"});
   clientsTableView->setModel(clientsModel);
+  
 
   connect(addClientBtn, &QPushButton::clicked, this,
           &MainWindow::showAddClientDialog);
-//   connect(editClientBtn, &QPushButton::clicked, this,
-//           &MainWindow::showEditClientDialog);
-//   connect(deleteClientBtn, &QPushButton::clicked, this,
-//           &MainWindow::deleteClient);
+  connect(editClientBtn, &QPushButton::clicked, this,
+          &MainWindow::showEditClientDialog);
+  //   connect(deleteClientBtn, &QPushButton::clicked, this,
+  //           &MainWindow::deleteClient);
 
   layout->addLayout(buttonsLayout);
   layout->addWidget(clientsTableView);
 }
 
-void MainWindow::showEditClientDialog(const UserName &userName) {
+void MainWindow::showAddClientDialog() {
   QDialog dialog(this);
-  dialog.setWindowTitle("Edit Client");
+  dialog.setWindowTitle("Add New Client");
+  QFormLayout *formLayout = new QFormLayout();
 
-  auto userIt = userInitMap.find(userName);
-  if (userIt == userInitMap.end()) {
-    QMessageBox::critical(this, "Error", "Client not found!");
+  QLineEdit *nameEdit = new QLineEdit(&dialog);
+  QLineEdit *surnameEdit = new QLineEdit(&dialog);
+  QLineEdit *addressEdit = new QLineEdit(&dialog);
+  QLineEdit *passportEdit = new QLineEdit(&dialog);
+
+  formLayout->addRow("Name:", nameEdit);
+  formLayout->addRow("Surname:", surnameEdit);
+  formLayout->addRow("Address:", addressEdit);
+  formLayout->addRow("Passport ID:", passportEdit);
+
+  QHBoxLayout *buttonsLayout = new QHBoxLayout();
+  QPushButton *saveBtn = new QPushButton("Save");
+  QPushButton *cancelBtn = new QPushButton("Cancel");
+  buttonsLayout->addWidget(saveBtn);
+  buttonsLayout->addWidget(cancelBtn);
+
+  QVBoxLayout *dialogLayout = new QVBoxLayout(&dialog);
+  dialogLayout->addLayout(formLayout);
+  dialogLayout->addLayout(buttonsLayout);
+
+  dialog.setLayout(dialogLayout);
+
+  connect(saveBtn, &QPushButton::clicked, [&]() {
+    // Validate input
+    if (nameEdit->text().isEmpty() || surnameEdit->text().isEmpty()) {
+      QMessageBox::warning(this, "Error", "Name and Surname are required!");
+      return;
+    }
+
+    try {
+      User newUser(nameEdit->text().toStdString(),
+                   surnameEdit->text().toStdString());
+
+      if (!addressEdit->text().isEmpty()) {
+        newUser.GetAdress(addressEdit->text().toStdString());
+      }
+
+      if (!passportEdit->text().isEmpty()) {
+        bool ok;
+        size_t passportId = passportEdit->text().toULong(&ok);
+        if (ok) {
+          newUser.GetPassportId(passportId);
+        }
+      }
+
+      UserName userName(newUser.client.name, newUser.client.surname);
+      userInitMap[userName] = newUser;
+
+      populateClientsTable();
+
+      dialog.accept();
+    } catch (const std::exception &e) {
+      QMessageBox::critical(this, "Error",
+                            QString("Failed to add client: %1").arg(e.what()));
+    }
+  });
+
+  connect(cancelBtn, &QPushButton::clicked, &dialog, &QDialog::reject);
+
+  dialog.exec();
+}
+void MainWindow::showEditClientDialog() {
+  bool ok;
+  QString userIdInput = QInputDialog::getText(
+      this, "Enter User ID",
+      "Enter the ID of the client to edit:", QLineEdit::Normal, "", &ok);
+
+  if (!ok || userIdInput.isEmpty()) {
+    QMessageBox::critical(this, "Error", "User ID is required.");
     return;
   }
 
-  User &user = userIt->second;
+  bool idOk;
+  size_t userId = userIdInput.toULong(&idOk);
+  if (!idOk || userId == 0) {
+    QMessageBox::critical(this, "Error", "Invalid ID entered.");
+    return;
+  }
+
+  User *user = nullptr;
+  for (auto &pair : userInitMap) {
+    if (pair.second.passport_id == userId) {
+      user = &pair.second;
+      break;
+    }
+  }
+
+  if (!user) {
+    QMessageBox::critical(this, "Error",
+                          "Client not found with the provided ID.");
+    return;
+  }
+
+  QDialog dialog(this);
+  dialog.setWindowTitle("Edit Client");
 
   QFormLayout *formLayout = new QFormLayout();
 
   QLineEdit *nameEdit = new QLineEdit(&dialog);
-  nameEdit->setText(QString::fromStdString(userName.name));
+  nameEdit->setText(QString::fromStdString(user->client.name));
+
   QLineEdit *surnameEdit = new QLineEdit(&dialog);
-  surnameEdit->setText(QString::fromStdString(userName.surname));
+  surnameEdit->setText(QString::fromStdString(user->client.surname));
+
   QLineEdit *addressEdit = new QLineEdit(&dialog);
-  if (user.WasAdressed) {
-    addressEdit->setText(QString::fromStdString(user.address));
+  if (user->WasAdressed) {
+    addressEdit->setText(QString::fromStdString(user->address));
   }
+
   QLineEdit *passportEdit = new QLineEdit(&dialog);
-  if (user.HasId) {
-    passportEdit->setText(QString::number(user.passport_id));
+  if (user->HasId) {
+    passportEdit->setText(QString::number(user->passport_id));
   }
 
   formLayout->addRow("Name:", nameEdit);
@@ -121,7 +215,12 @@ void MainWindow::showEditClientDialog(const UserName &userName) {
 
   connect(saveBtn, &QPushButton::clicked, [&]() {
     try {
-      userInitMap.erase(userName);
+      UserName updatedUserName(nameEdit->text().toStdString(),
+                               surnameEdit->text().toStdString());
+
+      userInitMap.erase(UserName(
+          user->client.name, user->client.surname));  // Удаляем старую запись
+
       User updatedUser(nameEdit->text().toStdString(),
                        surnameEdit->text().toStdString());
 
@@ -137,12 +236,9 @@ void MainWindow::showEditClientDialog(const UserName &userName) {
         }
       }
 
-      UserName updatedUserName(updatedUser.client.name,
-                               updatedUser.client.surname);
       userInitMap[updatedUserName] = updatedUser;
 
       populateClientsTable();
-
       dialog.accept();
     } catch (const std::exception &e) {
       QMessageBox::critical(
@@ -152,7 +248,7 @@ void MainWindow::showEditClientDialog(const UserName &userName) {
 
   connect(cancelBtn, &QPushButton::clicked, &dialog, &QDialog::reject);
 
-  dialog.exec();
+  dialog.exec();  // Запуск диалога редактирования
 }
 
 void MainWindow::deleteClient() {
@@ -202,10 +298,10 @@ void MainWindow::createAccountsTab(QWidget *parent) {
 
   connect(addAccountBtn, &QPushButton::clicked, this,
           &MainWindow::showAddAccountDialog);
-//   connect(depositBtn, &QPushButton::clicked, this,
-//           &MainWindow::showDepositDialog);
-//   connect(withdrawBtn, &QPushButton::clicked, this,
-//           &MainWindow::showWithdrawDialog);
+  //   connect(depositBtn, &QPushButton::clicked, this,
+  //           &MainWindow::showDepositDialog);
+  //   connect(withdrawBtn, &QPushButton::clicked, this,
+  //           &MainWindow::showWithdrawDialog);
 
   layout->addLayout(buttonsLayout);
   layout->addWidget(accountsTableView);
@@ -355,73 +451,6 @@ void MainWindow::showWithdrawDialog() {
   dialog.exec();
 }
 
-void MainWindow::showAddClientDialog() {
-  QDialog dialog(this);
-  dialog.setWindowTitle("Add New Client");
-  QFormLayout *formLayout = new QFormLayout();
-
-  QLineEdit *nameEdit = new QLineEdit(&dialog);
-  QLineEdit *surnameEdit = new QLineEdit(&dialog);
-  QLineEdit *addressEdit = new QLineEdit(&dialog);
-  QLineEdit *passportEdit = new QLineEdit(&dialog);
-
-  formLayout->addRow("Name:", nameEdit);
-  formLayout->addRow("Surname:", surnameEdit);
-  formLayout->addRow("Address:", addressEdit);
-  formLayout->addRow("Passport ID:", passportEdit);
-
-  QHBoxLayout *buttonsLayout = new QHBoxLayout();
-  QPushButton *saveBtn = new QPushButton("Save");
-  QPushButton *cancelBtn = new QPushButton("Cancel");
-  buttonsLayout->addWidget(saveBtn);
-  buttonsLayout->addWidget(cancelBtn);
-
-  QVBoxLayout *dialogLayout = new QVBoxLayout(&dialog);
-  dialogLayout->addLayout(formLayout);
-  dialogLayout->addLayout(buttonsLayout);
-
-  dialog.setLayout(dialogLayout);
-
-  connect(saveBtn, &QPushButton::clicked, [&]() {
-    // Validate input
-    if (nameEdit->text().isEmpty() || surnameEdit->text().isEmpty()) {
-      QMessageBox::warning(this, "Error", "Name and Surname are required!");
-      return;
-    }
-
-    try {
-      User newUser(nameEdit->text().toStdString(),
-                   surnameEdit->text().toStdString());
-
-      if (!addressEdit->text().isEmpty()) {
-        newUser.GetAdress(addressEdit->text().toStdString());
-      }
-
-      if (!passportEdit->text().isEmpty()) {
-        bool ok;
-        size_t passportId = passportEdit->text().toULong(&ok);
-        if (ok) {
-          newUser.GetPassportId(passportId);
-        }
-      }
-
-      UserName userName(newUser.client.name, newUser.client.surname);
-      userInitMap[userName] = newUser;
-
-      populateClientsTable();
-
-      dialog.accept();
-    } catch (const std::exception &e) {
-      QMessageBox::critical(this, "Error",
-                            QString("Failed to add client: %1").arg(e.what()));
-    }
-  });
-
-  connect(cancelBtn, &QPushButton::clicked, &dialog, &QDialog::reject);
-
-  dialog.exec();
-}
-
 void MainWindow::showAddAccountDialog() {
   QDialog dialog(this);
   dialog.setWindowTitle("Add New Account");
@@ -504,21 +533,40 @@ void MainWindow::showAddBankDialog() {
 }
 
 void MainWindow::populateClientsTable() {
-  clientsModel->clear();
-  clientsModel->setHorizontalHeaderLabels(
-      {"ID", "Name", "Surname", "Address", "Passport", "Accounts", "Status"});
+  clientsModel->setRowCount(0);  // Очистка таблицы перед добавлением новых данных
 
-  int row = 0;
-  for (const auto &[name, user] : userInitMap) {
-    clientsModel->setItem(row, 0, new QStandardItem(QString::number(row + 1)));
-    clientsModel->setItem(row, 1,
-                          new QStandardItem(QString::fromStdString(name.name)));
-    clientsModel->setItem(
-        row, 2, new QStandardItem(QString::fromStdString(name.surname)));
+  for (const auto &pair : userInitMap) {
+    const User &user = pair.second;
+    QList<QStandardItem *> row;
 
-    row++;
+    // ID
+    row.append(new QStandardItem(QString::number(user.passport_id)));
+
+    // Name
+    row.append(new QStandardItem(QString::fromStdString(user.client.name)));
+
+    // Surname
+    row.append(new QStandardItem(QString::fromStdString(user.client.surname)));
+
+    // Address
+    row.append(new QStandardItem(
+        user.WasAdressed ? QString::fromStdString(user.address) : "N/A"));
+
+    // Passport
+    row.append(new QStandardItem(
+        user.HasId ? QString::number(user.passport_id) : "N/A"));
+
+    // // Accounts (например, можно показывать количество счетов)
+    // row.append(new QStandardItem(QString::number(user.accounts.size())));
+
+    // // Status (например, активен или нет)
+    // row.append(new QStandardItem(
+    //     user.IsActive ? "Active" : "Inactive"));
+
+    clientsModel->appendRow(row);
   }
 }
+
 
 void MainWindow::populateAccountsTable() {
   // Implement similar to populateClientsTable when you have the account data
