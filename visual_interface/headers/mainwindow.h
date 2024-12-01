@@ -63,6 +63,11 @@ private:
     void populateAccountsTable();
     void populateTransactionsTable();
     void populateBanksTable();
+
+    void showEditClientDialog(const UserName& userName);
+    void deleteClient();
+    void showDepositDialog();
+    void showWithdrawDialog();
 };
 
 #endif // MAINWINDOW_H
