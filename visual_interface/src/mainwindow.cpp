@@ -62,7 +62,7 @@ void MainWindow::createClientsTab(QWidget *parent) {
   clientsTableView = new QTableView();
   clientsModel = new QStandardItemModel(0, 7, this);
   clientsModel->setHorizontalHeaderLabels(
-      {"ID", "Name", "Surname", "Address", "Passport", "Accounts", "Status"});
+      {"Id", "Name", "Surname", "Address", "Passport", "Accounts", "Status"});
   clientsTableView->setModel(clientsModel);
   
 
@@ -70,8 +70,8 @@ void MainWindow::createClientsTab(QWidget *parent) {
           &MainWindow::showAddClientDialog);
   connect(editClientBtn, &QPushButton::clicked, this,
           &MainWindow::showEditClientDialog);
-  //   connect(deleteClientBtn, &QPushButton::clicked, this,
-  //           &MainWindow::deleteClient);
+  connect(deleteClientBtn, &QPushButton::clicked, this,
+            &MainWindow::deleteClient);
 
   layout->addLayout(buttonsLayout);
   layout->addWidget(clientsTableView);
@@ -146,18 +146,18 @@ void MainWindow::showAddClientDialog() {
 void MainWindow::showEditClientDialog() {
   bool ok;
   QString userIdInput = QInputDialog::getText(
-      this, "Enter User ID",
-      "Enter the ID of the client to edit:", QLineEdit::Normal, "", &ok);
+      this, "Enter User Passport",
+      "Enter the Passport of the client to edit:", QLineEdit::Normal, "", &ok);
 
   if (!ok || userIdInput.isEmpty()) {
-    QMessageBox::critical(this, "Error", "User ID is required.");
+    QMessageBox::critical(this, "Error", "User Passport is required.");
     return;
   }
 
   bool idOk;
   size_t userId = userIdInput.toULong(&idOk);
   if (!idOk || userId == 0) {
-    QMessageBox::critical(this, "Error", "Invalid ID entered.");
+    QMessageBox::critical(this, "Error", "Invalid Passport entered.");
     return;
   }
 
@@ -171,7 +171,7 @@ void MainWindow::showEditClientDialog() {
 
   if (!user) {
     QMessageBox::critical(this, "Error",
-                          "Client not found with the provided ID.");
+                          "Client not found with the provided Passport.");
     return;
   }
 
@@ -219,7 +219,7 @@ void MainWindow::showEditClientDialog() {
                                surnameEdit->text().toStdString());
 
       userInitMap.erase(UserName(
-          user->client.name, user->client.surname));  // Удаляем старую запись
+          user->client.name, user->client.surname)); 
 
       User updatedUser(nameEdit->text().toStdString(),
                        surnameEdit->text().toStdString());
@@ -248,37 +248,71 @@ void MainWindow::showEditClientDialog() {
 
   connect(cancelBtn, &QPushButton::clicked, &dialog, &QDialog::reject);
 
-  dialog.exec();  // Запуск диалога редактирования
+  dialog.exec();  
 }
-
 void MainWindow::deleteClient() {
-  QModelIndexList selectedIndexes =
-      clientsTableView->selectionModel()->selectedRows();
+    // Убедимся, что модель корректно инициализирована
+    if (!clientsModel) {
+        QMessageBox::critical(this, "Delete Client", "Clients model is not initialized.");
+        return;
+    }
 
-  if (selectedIndexes.isEmpty()) {
-    QMessageBox::warning(this, "Delete Client",
-                         "Please select a client to delete.");
-    return;
-  }
+    // Открываем окно для ввода номера паспорта
+    bool ok;
+    QString passport = QInputDialog::getText(this, "Delete Client",
+                                             "Enter Passport Number:",
+                                             QLineEdit::Normal, "", &ok);
 
-  QMessageBox::StandardButton reply;
-  reply = QMessageBox::question(this, "Delete Client",
-                                "Are you sure you want to delete this client?",
-                                QMessageBox::Yes | QMessageBox::No);
+    // Если пользователь нажал "Отмена" или не ввёл ничего
+    if (!ok || passport.isEmpty()) {
+        QMessageBox::information(this, "Delete Client", "Operation canceled.");
+        return;
+    }
 
-  if (reply == QMessageBox::Yes) {
-    int row = selectedIndexes.first().row();
+    // Проверяем, есть ли клиент с таким паспортом в базе
+    bool clientFound = false;
+    for (int row = 0; row < clientsModel->rowCount(); ++row) {
+        QString clientPassport = clientsModel->item(row, 0)->text(); // Предполагаем, что паспорт в 0-й колонке
 
-    QString name = clientsModel->item(row, 1)->text();
-    QString surname = clientsModel->item(row, 2)->text();
+        if (clientPassport == passport) {
+            clientFound = true;
 
-    UserName userToDelete(name.toStdString(), surname.toStdString());
+            // Подтверждение удаления
+            QMessageBox::StandardButton reply;
+            reply = QMessageBox::question(this, "Delete Client",
+                                          "Are you sure you want to delete this client?",
+                                          QMessageBox::Yes | QMessageBox::No);
 
-    userInitMap.erase(userToDelete);
+            if (reply == QMessageBox::Yes) {
+                // Удаляем клиента из базы данных (userInitMap)
+                QString name = clientsModel->item(row, 1)->text();    // Имя в колонке 1
+                QString surname = clientsModel->item(row, 2)->text(); // Фамилия в колонке 2
 
-    populateClientsTable();
-  }
+                UserName userToDelete(name.toStdString(), surname.toStdString());
+                userInitMap.erase(userToDelete);
+
+                // Удаляем строку из модели
+                clientsModel->removeRow(row);
+
+                // Сообщение об успешном удалении
+                QMessageBox::information(this, "Delete Client",
+                                         "Client deleted successfully.");
+            } else {
+                QMessageBox::information(this, "Delete Client",
+                                         "Operation canceled.");
+            }
+
+            break; // Прерываем цикл, так как клиент найден
+        }
+    }
+
+    // Если клиент с таким паспортом не найден
+    if (!clientFound) {
+        QMessageBox::warning(this, "Delete Client",
+                             "Client with the specified passport number was not found.");
+    }
 }
+
 
 void MainWindow::createAccountsTab(QWidget *parent) {
   QVBoxLayout *layout = new QVBoxLayout(parent);
