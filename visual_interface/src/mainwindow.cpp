@@ -3,41 +3,40 @@
 #include <QInputDialog>
 #include <QMessageBox>
 #include <QDebug> 
-#include <QHeaderView> // Необходимо для работы QHeaderView
-#include <QTableView>  // Необходимо для QTableView 
+#include <QHeaderView> 
+#include <QTableView>  
 #include <QDoubleSpinBox>
 #include <QPushButton>
 #include <QVBoxLayout>
 #include <QLabel>
 
+
 MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent) {
-  setWindowTitle("Banking System Management");
-  resize(1200, 800);
+    setWindowTitle("Banking System Management");
+    resize(1200, 800);
 
-  QWidget *centralWidget = new QWidget(this);
-  QVBoxLayout *mainLayout = new QVBoxLayout(centralWidget);
+    QWidget *centralWidget = new QWidget(this);
+    QVBoxLayout *mainLayout = new QVBoxLayout(centralWidget);
 
-  QTabWidget *tabWidget = new QTabWidget();
+    QTabWidget *tabWidget = new QTabWidget();
 
-  QWidget *clientsTab = new QWidget();
-  QWidget *accountsTab = new QWidget();
-  QWidget *transactionsTab = new QWidget();
-  QWidget *banksTab = new QWidget();
+    QWidget *clientsTab = new QWidget();
+    QWidget *accountsTab = new QWidget();
+    QWidget *transactionsTab = new QWidget();
+    QWidget *banksTab = new QWidget();
 
-  createClientsTab(clientsTab);
-  createAccountsTab(accountsTab);
-  createTransactionsTab(transactionsTab);
-  createBanksTab(banksTab);
+    createClientsTab(clientsTab);
+    createAccountsTab(accountsTab);
+    createTransactionsTab(transactionsTab);
+    createBanksTab(banksTab);
 
-  tabWidget->addTab(clientsTab, "Clients");
-  tabWidget->addTab(accountsTab, "Accounts");
-  tabWidget->addTab(transactionsTab, "Transactions");
-  tabWidget->addTab(banksTab, "Banks");
+    tabWidget->addTab(clientsTab, "Clients");
+    tabWidget->addTab(accountsTab, "Accounts");
+    tabWidget->addTab(transactionsTab, "Transactions");
+    tabWidget->addTab(banksTab, "Banks");
 
-  mainLayout->addWidget(tabWidget);
-  setCentralWidget(centralWidget);
-
-  // createMenuBar();
+    mainLayout->addWidget(tabWidget);
+    setCentralWidget(centralWidget);
 }
 
 void MainWindow::createMenuBar() {
@@ -327,32 +326,425 @@ void MainWindow::deleteClient() {
                              "Client with the specified passport number was not found.");
     }
 }
+void MainWindow::deleteAccount() {
+    QModelIndexList selectedIndexes =
+        accountsTableView->selectionModel()->selectedRows();
+
+    if (selectedIndexes.isEmpty()) {
+        QMessageBox::warning(this, "Delete Account",
+                             "Please select an account to delete.");
+        return;
+    }
+
+    int row = selectedIndexes.first().row();
+    
+    // Confirm deletion
+    QMessageBox::StandardButton reply;
+    reply = QMessageBox::question(this, "Delete Account",
+                                  "Are you sure you want to delete this account?",
+                                  QMessageBox::Yes | QMessageBox::No);
+
+    if (reply == QMessageBox::Yes) {
+        // Remove the account from the model
+        accountsModel->removeRow(row);
+
+        // Update client account counts
+        updateClientAccountCount();
+
+        QMessageBox::information(this, "Delete Account", 
+                                 "Account deleted successfully.");
+    }
+}
+
+void MainWindow::showTransferDialog() {
+    // Check if at least two accounts are selected
+    QModelIndexList selectedIndexes =
+        accountsTableView->selectionModel()->selectedRows();
+
+    if (selectedIndexes.size() < 2) {
+        QMessageBox::warning(this, "Transfer Money",
+                             "Please select two accounts to transfer between.");
+        return;
+    }
+
+    QDialog dialog(this);
+    dialog.setWindowTitle("Transfer Money Between Accounts");
+
+    QFormLayout *formLayout = new QFormLayout();
+
+    // Source account selection
+    QComboBox *sourceAccountCombo = new QComboBox(&dialog);
+    QComboBox *destAccountCombo = new QComboBox(&dialog);
+
+    // Populate account combos
+    for (int i = 0; i < accountsModel->rowCount(); ++i) {
+        QString accountId = accountsModel->item(i, 0)->text();
+        QString accountType = accountsModel->item(i, 1)->text();
+        QString owner = accountsModel->item(i, 2)->text();
+        QString balance = accountsModel->item(i, 3)->text();
+
+        QString displayText = QString("%1 - %2 (%3) - Balance: %4")
+                                  .arg(accountId, accountType, owner, balance);
+        sourceAccountCombo->addItem(displayText, i);
+        destAccountCombo->addItem(displayText, i);
+    }
+
+    // Amount input
+    QLineEdit *amountEdit = new QLineEdit(&dialog);
+
+    formLayout->addRow("Source Account:", sourceAccountCombo);
+    formLayout->addRow("Destination Account:", destAccountCombo);
+    formLayout->addRow("Transfer Amount:", amountEdit);
+
+    QHBoxLayout *buttonsLayout = new QHBoxLayout();
+    QPushButton *transferBtn = new QPushButton("Transfer");
+    QPushButton *cancelBtn = new QPushButton("Cancel");
+    buttonsLayout->addWidget(transferBtn);
+    buttonsLayout->addWidget(cancelBtn);
+
+    QVBoxLayout *dialogLayout = new QVBoxLayout(&dialog);
+    dialogLayout->addLayout(formLayout);
+    dialogLayout->addLayout(buttonsLayout);
+    dialog.setLayout(dialogLayout);
+
+    connect(transferBtn, &QPushButton::clicked, [&]() {
+        bool ok;
+        double amount = amountEdit->text().toDouble(&ok);
+
+        if (!ok || amount <= 0) {
+            QMessageBox::warning(this, "Error", "Invalid transfer amount.");
+            return;
+        }
+
+        int sourceRow = sourceAccountCombo->currentData().toInt();
+        int destRow = destAccountCombo->currentData().toInt();
+
+        // Get source and destination balances
+        QStandardItem *sourceBalanceItem = accountsModel->item(sourceRow, 3);
+        QStandardItem *destBalanceItem = accountsModel->item(destRow, 3);
+
+        double sourceBalance = sourceBalanceItem->text().toDouble();
+        double destBalance = destBalanceItem->text().toDouble();
+
+        // Check sufficient funds
+        if (amount > sourceBalance) {
+            QMessageBox::warning(this, "Error", "Insufficient funds for transfer.");
+            return;
+        }
+
+        // Perform transfer
+        sourceBalanceItem->setText(QString::number(sourceBalance - amount));
+        destBalanceItem->setText(QString::number(destBalance + amount));
+
+        QMessageBox::information(this, "Transfer Successful", 
+                                 QString("Transferred %1 between accounts.")
+                                     .arg(amount));
+
+        dialog.accept();
+    });
+
+    connect(cancelBtn, &QPushButton::clicked, &dialog, &QDialog::reject);
+
+    dialog.exec();
+}
 
 void MainWindow::createAccountsTab(QWidget *parent) {
-  QVBoxLayout *layout = new QVBoxLayout(parent);
-  QHBoxLayout *buttonsLayout = new QHBoxLayout();
-  QPushButton *addAccountBtn = new QPushButton("Add Account");
-  QPushButton *depositBtn = new QPushButton("Deposit");
-  QPushButton *withdrawBtn = new QPushButton("Withdraw");
-  buttonsLayout->addWidget(addAccountBtn);
-  buttonsLayout->addWidget(depositBtn);
-  buttonsLayout->addWidget(withdrawBtn);
+    QVBoxLayout *layout = new QVBoxLayout(parent);
+    QHBoxLayout *buttonsLayout = new QHBoxLayout();
+    QPushButton *addAccountBtn = new QPushButton("Add Account");
+    QPushButton *deleteAccountBtn = new QPushButton("Delete Account");
+    QPushButton *transferBtn = new QPushButton("Transfer");
+    buttonsLayout->addWidget(addAccountBtn);
+    buttonsLayout->addWidget(deleteAccountBtn);
+    buttonsLayout->addWidget(transferBtn);
 
-  accountsTableView = new QTableView();
-  accountsModel = new QStandardItemModel(0, 6, this);
-  accountsModel->setHorizontalHeaderLabels(
-      {"ID", "Type", "Owner", "Balance", "Limit", "Status"});
-  accountsTableView->setModel(accountsModel);
+    accountsTableView = new QTableView();
+    accountsModel = new QStandardItemModel(0, 7, this);
+    accountsModel->setHorizontalHeaderLabels(
+        {"ID", "Type", "Owner", "Balance", "Limit/Period", "Rate", "Bank"});
+    accountsTableView->setModel(accountsModel);
 
-  //   connect(addAccountBtn, &QPushButton::clicked, this,
-  //           &MainWindow::showAddAccountDialog);
-  //   connect(depositBtn, &QPushButton::clicked, this,
-  //           &MainWindow::showDepositDialog);
-  //   connect(withdrawBtn, &QPushButton::clicked, this,
-  //           &MainWindow::showWithdrawDialog);
+    connect(addAccountBtn, &QPushButton::clicked, this,
+            &MainWindow::showAddAccountDialog);
+    connect(deleteAccountBtn, &QPushButton::clicked, this,
+            &MainWindow::deleteAccount);
+    connect(transferBtn, &QPushButton::clicked, this,
+            &MainWindow::showTransferDialog);
 
-  layout->addLayout(buttonsLayout);
-  layout->addWidget(accountsTableView);
+    layout->addLayout(buttonsLayout);
+    layout->addWidget(accountsTableView);
+}
+
+void MainWindow::showAddAccountDialog() {
+    // First, check if any banks exist
+    if (bankData.empty()) {
+        QMessageBox::warning(this, "Add Account",
+                             "Please add a bank first before creating an account.");
+        return;
+    }
+
+    // First dialog for account type selection
+    QDialog typeDialog(this);
+    typeDialog.setWindowTitle("Select Account Type");
+
+    QVBoxLayout *typeLayout = new QVBoxLayout(&typeDialog);
+    QLabel *typeLabel = new QLabel("Select Account Type:", &typeDialog);
+
+    QComboBox *accountTypeCombo = new QComboBox(&typeDialog);
+    accountTypeCombo->addItems({"Debit", "Credit", "Deposit"});
+
+    QPushButton *nextButton = new QPushButton("Next", &typeDialog);
+
+    typeLayout->addWidget(typeLabel);
+    typeLayout->addWidget(accountTypeCombo);
+    typeLayout->addWidget(nextButton);
+    typeDialog.setLayout(typeLayout);
+
+    // Connect the next button to open the account details dialog
+    connect(nextButton, &QPushButton::clicked, [&]() {
+        QString selectedType = accountTypeCombo->currentText();
+        typeDialog.accept();
+
+        // Open the detailed account creation dialog
+        QDialog dialog(this);
+        dialog.setWindowTitle("Add New " + selectedType + " Account");
+
+        QFormLayout *formLayout = new QFormLayout();
+
+        // Bank selection with dynamic update
+        QComboBox *bankCombo = new QComboBox(&dialog);
+        for (const Bank &bank : bankData) {
+            bankCombo->addItem(QString::fromStdString(bank.bank_name));
+        }
+        formLayout->addRow("Select Bank:", bankCombo);
+
+        // Client selection
+        QComboBox *clientCombo = new QComboBox(&dialog);
+        for (const auto &[name, user] : userInitMap) {
+            clientCombo->addItem(
+                QString::fromStdString(name.name + " " + name.surname));
+        }
+        formLayout->addRow("Select Client:", clientCombo);
+
+        // Initial balance
+        QLineEdit *balanceEdit = new QLineEdit(&dialog);
+        formLayout->addRow("Initial Balance:", balanceEdit);
+
+        // Additional dynamic fields
+        QLineEdit *limitEdit = nullptr;
+        QLabel *limitLabel = nullptr;
+        QLabel *periodLabel = nullptr;
+        double creditRate = 0.0;
+        size_t depositPeriod = 0;
+
+        // Function to update bank-specific details
+        auto updateBankDetails = [&](const QString &bankName) {
+            for (const Bank &bank : bankData) {
+                if (bank.bank_name == bankName.toStdString()) {
+                    if (selectedType == "Credit") {
+                        creditRate = bank.default_credit.commission;
+                        if (limitEdit) {
+                            limitEdit->setText(QString::number(bank.default_credit.credit_limit));
+                        }
+                        if (limitLabel) {
+                            limitLabel->setText(QString::number(creditRate) + "%");
+                        }
+                    } else if (selectedType == "Deposit") {
+                        depositPeriod = bank.default_deposit.period;
+                        if (periodLabel) {
+                            periodLabel->setText(QString::number(depositPeriod) + " days");
+                        }
+                    }
+                    break;
+                }
+            }
+        };
+
+        // Add type-specific fields
+        if (selectedType == "Credit") {
+            limitEdit = new QLineEdit(&dialog);
+            limitLabel = new QLabel(&dialog);
+            formLayout->addRow("Credit Limit:", limitEdit);
+            formLayout->addRow("Credit Rate:", limitLabel);
+        } else if (selectedType == "Deposit") {
+            periodLabel = new QLabel(&dialog);
+            formLayout->addRow("Deposit Period:", periodLabel);
+        }
+
+        // Connect bank combo to update details dynamically
+        connect(bankCombo, &QComboBox::currentTextChanged, updateBankDetails);
+
+        // Initial update of bank details
+        updateBankDetails(bankCombo->currentText());
+
+        // Buttons
+        QHBoxLayout *buttonsLayout = new QHBoxLayout();
+        QPushButton *saveBtn = new QPushButton("Save");
+        QPushButton *cancelBtn = new QPushButton("Cancel");
+        buttonsLayout->addWidget(saveBtn);
+        buttonsLayout->addWidget(cancelBtn);
+
+        QVBoxLayout *dialogLayout = new QVBoxLayout(&dialog);
+        dialogLayout->addLayout(formLayout);
+        dialogLayout->addLayout(buttonsLayout);
+        dialog.setLayout(dialogLayout);
+
+        // Save button handler
+        connect(saveBtn, &QPushButton::clicked, [&]() {
+            // Validate inputs
+            if (clientCombo->currentIndex() == -1 || balanceEdit->text().isEmpty()) {
+                QMessageBox::warning(this, "Error",
+                                     "Client and Initial Balance are required!");
+                return;
+            }
+
+            bool balanceOk;
+            double balance = balanceEdit->text().toDouble(&balanceOk);
+            if (!balanceOk || balance < 0) {
+                QMessageBox::warning(this, "Error", "Invalid balance amount!");
+                return;
+            }
+
+            // Get selected bank
+            QString selectedBank = bankCombo->currentText();
+            Bank *chosenBank = nullptr;
+            for (Bank &bank : bankData) {
+                if (bank.bank_name == selectedBank.toStdString()) {
+                    chosenBank = &bank;
+                    break;
+                }
+            }
+
+            if (!chosenBank) {
+                QMessageBox::warning(this, "Error", "Bank selection failed!");
+                return;
+            }
+
+            // Get the selected client
+            QString selectedClient = clientCombo->currentText();
+            QStringList nameParts = selectedClient.split(" ");
+            if (nameParts.size() < 2) {
+                QMessageBox::warning(this, "Error", "Invalid client name!");
+                return;
+            }
+
+            // Prepare account-specific details
+            int row = accountsModel->rowCount();
+            QString accountId = QString::number(row + 1);
+
+            // Prepare limit and period fields
+            QString limitOrPeriodValue;
+            QString rateValue = "0";
+            if (selectedType == "Credit") {
+                limitOrPeriodValue = limitEdit ? limitEdit->text() : "";
+                rateValue = limitLabel ? limitLabel->text().replace("%", "") : "0";
+            } else if (selectedType == "Deposit") {
+                limitOrPeriodValue = periodLabel ? periodLabel->text().replace(" days", "") : "";
+            } else {
+                // For Debit, leave empty
+                limitOrPeriodValue = "";
+            }
+
+            // Add to accounts table
+            QList<QStandardItem *> accountRow;
+            accountRow << new QStandardItem(accountId)  // ID
+                       << new QStandardItem(selectedType)  // Type
+                       << new QStandardItem(selectedClient)  // Owner
+                       << new QStandardItem(QString::number(balance))  // Balance
+                       << new QStandardItem(limitOrPeriodValue)  // Limit/Period
+                       << new QStandardItem(rateValue)  // Rate
+                       << new QStandardItem(selectedBank);  // Bank
+
+            accountsModel->appendRow(accountRow);
+
+            // Update client's account count
+            updateClientAccountCount();
+
+            dialog.accept();
+        });
+
+        connect(cancelBtn, &QPushButton::clicked, &dialog, &QDialog::reject);
+
+        dialog.exec();
+    });
+
+    typeDialog.exec();
+}
+void MainWindow::showAddTransactionDialog() {
+  QMessageBox::information(this, "Add Transaction",
+                           "Transaction dialog not implemented yet.");
+}
+
+void MainWindow::showAddBankDialog() {
+    QDialog dialog(this);
+    dialog.setWindowTitle("Add New Bank");
+
+    QFormLayout *formLayout = new QFormLayout();
+
+    // Поле для имени банка
+    QLineEdit *bankNameEdit = new QLineEdit(&dialog);
+    formLayout->addRow("Bank Name:", bankNameEdit);
+
+    // Поле для лимита
+    QLineEdit *limitEdit = new QLineEdit(&dialog);
+    formLayout->addRow("Unidentified User Limit:", limitEdit);
+
+    // Поле для кредитного лимита
+    QLineEdit *creditLimitEdit = new QLineEdit(&dialog);
+    formLayout->addRow("Credit Limit:", creditLimitEdit);
+
+    // Поле для комиссии
+    QDoubleSpinBox *commissionEdit = new QDoubleSpinBox(&dialog);
+    formLayout->addRow("Commission:", commissionEdit);
+
+    // Поле для периода депозита
+    QLineEdit *depPeriodEdit = new QLineEdit(&dialog);
+    formLayout->addRow("Deposit Period (days):", depPeriodEdit);
+
+    // Кнопки для сохранения и отмены
+    QHBoxLayout *buttonsLayout = new QHBoxLayout();
+    QPushButton *saveBtn = new QPushButton("Save");
+    QPushButton *cancelBtn = new QPushButton("Cancel");
+    buttonsLayout->addWidget(saveBtn);
+    buttonsLayout->addWidget(cancelBtn);
+
+    QVBoxLayout *dialogLayout = new QVBoxLayout(&dialog);
+    dialogLayout->addLayout(formLayout);
+    dialogLayout->addLayout(buttonsLayout);
+
+    dialog.setLayout(dialogLayout);
+
+    connect(saveBtn, &QPushButton::clicked, [&]() {
+    // Получаем данные из полей ввода
+    std::string bankName = bankNameEdit->text().toStdString();
+    bool limitOk, creditLimitOk, depPeriodOk;
+    size_t limit = limitEdit->text().toUInt(&limitOk);
+    size_t creditLimit = creditLimitEdit->text().toUInt(&creditLimitOk);
+    size_t depPeriod = depPeriodEdit->text().toUInt(&depPeriodOk);
+
+    // Получаем дробное значение комиссии напрямую через value()
+    double commission = commissionEdit->value(); // QDoubleSpinBox::value() возвращает double
+
+    // Проверяем, что все значения введены корректно
+    if (!limitOk || !creditLimitOk || !depPeriodOk) {
+        QMessageBox::warning(this, "Input Error", "Please enter valid numbers for all fields.");
+        return;
+    }
+
+    // Создаем новый объект банка
+    Bank newBank(limit, creditLimit, commission, depPeriod, bankName);
+
+    // Добавляем банк в данные
+    bankData.push_back(newBank);
+
+    // Обновляем таблицу банков
+    populateBanksTable();
+
+    dialog.accept();
+    });
+
+    connect(cancelBtn, &QPushButton::clicked, &dialog, &QDialog::reject);
+    dialog.exec();
 }
 
 void MainWindow::showDepositDialog() {
@@ -492,124 +884,6 @@ void MainWindow::showWithdrawDialog() {
   dialog.exec();
 }
 
-// void MainWindow::showAddAccountDialog() {
-//     QDialog dialog(this);
-//     dialog.setWindowTitle("Add New Account");
-
-//     QFormLayout *formLayout = new QFormLayout();
-
-//     QComboBox *accountTypeCombo = new QComboBox(&dialog);
-//     accountTypeCombo->addItems({"Debit", "Credit", "Deposit"});
-
-//     QComboBox *clientCombo = new QComboBox(&dialog);
-//     for (const auto &[name, user] : userInitMap) {
-//         clientCombo->addItem(
-//             QString::fromStdString(name.name + " " + name.surname));
-//     }
-
-//     QLineEdit *balanceEdit = new QLineEdit(&dialog);
-//     QLineEdit *limitEdit = new QLineEdit(&dialog);
-    
-//     // Период для депозита
-//     QLineEdit *periodEdit = new QLineEdit(&dialog);
-//     periodEdit->setPlaceholderText("Enter deposit period in days");
-
-//     formLayout->addRow("Account Type:", accountTypeCombo);
-//     formLayout->addRow("Client:", clientCombo);
-//     formLayout->addRow("Initial Balance:", balanceEdit);
-//     formLayout->addRow("Credit Limit (if applicable):", limitEdit);
-//     formLayout->addRow("Deposit Period (days):", periodEdit);  // добавили поле для периода
-
-//     QHBoxLayout *buttonsLayout = new QHBoxLayout();
-//     QPushButton *saveBtn = new QPushButton("Save");
-//     QPushButton *cancelBtn = new QPushButton("Cancel");
-//     buttonsLayout->addWidget(saveBtn);
-//     buttonsLayout->addWidget(cancelBtn);
-
-//     QVBoxLayout *dialogLayout = new QVBoxLayout(&dialog);
-//     dialogLayout->addLayout(formLayout);
-//     dialogLayout->addLayout(buttonsLayout);
-
-//     dialog.setLayout(dialogLayout);
-
-//     connect(saveBtn, &QPushButton::clicked, [&]() {
-//         // Validate input
-//         if (clientCombo->currentIndex() == -1 || balanceEdit->text().isEmpty()) {
-//             QMessageBox::warning(this, "Error", 
-//                 "Client and Initial Balance are required!");
-//             return;
-//         }
-
-//         try {
-//             // Validate balance
-//             bool balanceOk;
-//             double balance = balanceEdit->text().toDouble(&balanceOk);
-//             if (!balanceOk) {
-//                 QMessageBox::warning(this, "Error", "Invalid balance amount!");
-//                 return;
-//             }
-
-//             // Get the selected client's name
-//             QString selectedClient = clientCombo->currentText();
-
-//             // Parse the client name
-//             QStringList nameParts = selectedClient.split(" ");
-//             if (nameParts.size() < 2) {
-//                 QMessageBox::warning(this, "Error", "Invalid client name!");
-//                 return;
-//             }
-
-//             QString clientName = nameParts[0];
-//             QString clientSurname = nameParts[1];
-
-//             // Optional: Add credit limit for credit accounts
-//             QString limit = (accountTypeCombo->currentText() == "Credit" && !limitEdit->text().isEmpty()) 
-//                             ? limitEdit->text() : "Is not Credit";
-
-//             // Get the deposit period
-//             size_t depositPeriod = 0;
-//             if (accountTypeCombo->currentText() == "Deposit") {
-//                 bool periodOk;
-//                 depositPeriod = periodEdit->text().toUInt(&periodOk);
-//                 if (!periodOk || depositPeriod <= 0) {
-//                     QMessageBox::warning(this, "Error", "Invalid deposit period!");
-//                     return;
-//                 }
-//             }
-
-//             // Generate a unique account ID 
-//             int row = accountsModel->rowCount();
-//             QString accountId = QString::number(row + 1);
-
-//             // Add full details to the accounts table
-//             accountsModel->setItem(row, 0, new QStandardItem(accountId)); // ID
-//             accountsModel->setItem(row, 1, new QStandardItem(accountTypeCombo->currentText())); // Type
-//             accountsModel->setItem(row, 2, new QStandardItem(selectedClient)); // Owner
-//             accountsModel->setItem(row, 3, new QStandardItem(QString::number(balance))); // Balance
-//             accountsModel->setItem(row, 4, new QStandardItem(limit)); // Limit
-//             accountsModel->setItem(row, 5, new QStandardItem("Active")); // Status
-
-//             // Для депозитного счета создаем объект Deposit
-//             if (accountTypeCombo->currentText() == "Deposit") {
-//                 Bank* rootBank = GetRootBank();  // Предполагаем, что есть метод для получения rootBank
-//                 Deposit* deposit = new Deposit(depositPeriod, rootBank); // Пример использования
-//                 // Можно хранить deposit в аккаунте или использовать его для дальнейших операций
-//             }
-
-//             // Update the number of accounts for this client
-//             updateClientAccountCount();
-
-//             dialog.accept();
-//         } catch (const std::exception &e) {
-//             QMessageBox::critical(this, "Error",
-//                 QString("Failed to add account: %1").arg(e.what()));
-//         }
-//     });
-
-//     connect(cancelBtn, &QPushButton::clicked, &dialog, &QDialog::reject);
-//     dialog.exec();
-// }
-
 void MainWindow::createTransactionsTab(QWidget *parent) {
   QVBoxLayout *layout = new QVBoxLayout(parent);
   QHBoxLayout *buttonsLayout = new QHBoxLayout();
@@ -650,84 +924,6 @@ void MainWindow::createBanksTab(QWidget *parent) {
     layout->addWidget(banksTableView);
 
     parent->setLayout(layout);
-}
-
-
-void MainWindow::showAddTransactionDialog() {
-  QMessageBox::information(this, "Add Transaction",
-                           "Transaction dialog not implemented yet.");
-}
-
-void MainWindow::showAddBankDialog() {
-    QDialog dialog(this);
-    dialog.setWindowTitle("Add New Bank");
-
-    QFormLayout *formLayout = new QFormLayout();
-
-    // Поле для имени банка
-    QLineEdit *bankNameEdit = new QLineEdit(&dialog);
-    formLayout->addRow("Bank Name:", bankNameEdit);
-
-    // Поле для лимита
-    QLineEdit *limitEdit = new QLineEdit(&dialog);
-    formLayout->addRow("Unidentified User Limit:", limitEdit);
-
-    // Поле для кредитного лимита
-    QLineEdit *creditLimitEdit = new QLineEdit(&dialog);
-    formLayout->addRow("Credit Limit:", creditLimitEdit);
-
-    // Поле для комиссии
-    QDoubleSpinBox *commissionEdit = new QDoubleSpinBox(&dialog);
-    formLayout->addRow("Commission:", commissionEdit);
-
-    // Поле для периода депозита
-    QLineEdit *depPeriodEdit = new QLineEdit(&dialog);
-    formLayout->addRow("Deposit Period (days):", depPeriodEdit);
-
-    // Кнопки для сохранения и отмены
-    QHBoxLayout *buttonsLayout = new QHBoxLayout();
-    QPushButton *saveBtn = new QPushButton("Save");
-    QPushButton *cancelBtn = new QPushButton("Cancel");
-    buttonsLayout->addWidget(saveBtn);
-    buttonsLayout->addWidget(cancelBtn);
-
-    QVBoxLayout *dialogLayout = new QVBoxLayout(&dialog);
-    dialogLayout->addLayout(formLayout);
-    dialogLayout->addLayout(buttonsLayout);
-
-    dialog.setLayout(dialogLayout);
-
-    connect(saveBtn, &QPushButton::clicked, [&]() {
-    // Получаем данные из полей ввода
-    std::string bankName = bankNameEdit->text().toStdString();
-    bool limitOk, creditLimitOk, depPeriodOk;
-    size_t limit = limitEdit->text().toUInt(&limitOk);
-    size_t creditLimit = creditLimitEdit->text().toUInt(&creditLimitOk);
-    size_t depPeriod = depPeriodEdit->text().toUInt(&depPeriodOk);
-
-    // Получаем дробное значение комиссии напрямую через value()
-    double commission = commissionEdit->value(); // QDoubleSpinBox::value() возвращает double
-
-    // Проверяем, что все значения введены корректно
-    if (!limitOk || !creditLimitOk || !depPeriodOk) {
-        QMessageBox::warning(this, "Input Error", "Please enter valid numbers for all fields.");
-        return;
-    }
-
-    // Создаем новый объект банка
-    Bank newBank(limit, creditLimit, commission, depPeriod, bankName);
-
-    // Добавляем банк в данные
-    bankData.push_back(newBank);
-
-    // Обновляем таблицу банков
-    populateBanksTable();
-
-    dialog.accept();
-    });
-
-    connect(cancelBtn, &QPushButton::clicked, &dialog, &QDialog::reject);
-    dialog.exec();
 }
 
 void MainWindow::updateClientAccountCount() {

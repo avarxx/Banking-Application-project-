@@ -1,78 +1,82 @@
 #ifndef MAINWINDOW_H
 #define MAINWINDOW_H
 
+#include <QAction>
 #include <QComboBox>
-#include <QPushButton>
-#include <QLineEdit>
+#include <QDialog>
 #include <QFormLayout>
-#include <QMessageBox> 
-#include <QMainWindow>
-#include <QTableView>
-#include <QStandardItemModel>
-#include <QVBoxLayout>
 #include <QHBoxLayout>
 #include <QLabel>
-#include <QTabWidget>
+#include <QLineEdit>
+#include <QMainWindow>
 #include <QMenuBar>
-#include <QAction>
-#include <QDialog>
-#include <vector>
+#include <QMessageBox>
+#include <QPushButton>
+#include <QStandardItemModel>
+#include <QTabWidget>
+#include <QTableView>
+#include <QVBoxLayout>
 #include <map>
-#include "../headers/user_data.h"
+#include <vector>
+
 #include "../headers/bank.h"
+#include "../headers/user_data.h"
 
 class MainWindow : public QMainWindow {
-    Q_OBJECT
+  Q_OBJECT
 
-public:
-    MainWindow(QWidget *parent = nullptr);
-    ~MainWindow() = default;
+ public:
+  MainWindow(QWidget *parent = nullptr);
+  ~MainWindow() = default;
 
-    Bank* GetRootBank(); // Добавляем метод для получения корневого банка
+  Bank *GetRootBank();  // Добавляем метод для получения корневого банка
 
-private:
-    // Models for different sections
-    QStandardItemModel *clientsModel;
-    QStandardItemModel *accountsModel;
-    QStandardItemModel *transactionsModel;
-    QStandardItemModel *banksModel;
+ private:
+  // Models for different sections
+  QStandardItemModel *clientsModel;
+  QStandardItemModel *accountsModel;
+  QStandardItemModel *transactionsModel;
+  QStandardItemModel *banksModel;
 
-    // Table views
-    QTableView *clientsTableView;
-    QTableView *accountsTableView;
-    QTableView *transactionsTableView;
-    QTableView *banksTableView;
+  // Table views
+  QTableView *clientsTableView;
+  QTableView *accountsTableView;
+  QTableView *transactionsTableView;
+  QTableView *banksTableView;
 
-    // Main data structures
-    std::vector<Bank> bankData;
-    std::map<UserName, User> userInitMap;
+  // Main data structures
+  std::vector<Bank> bankData;
+  std::map<UserName, User> userInitMap;
 
-    Bank* currentBank; // Указатель на текущий банк
+  Bank *currentBank;  // Указатель на текущий банк
 
-    // Setup methods
-    void createMenuBar();
-    void createClientsTab(QWidget *parent);
-    void createAccountsTab(QWidget *parent);
-    void createTransactionsTab(QWidget *parent);
-    void createBanksTab(QWidget *parent);
+  // Setup methods
+  void createMenuBar();
+  void createClientsTab(QWidget *parent);
+  void createAccountsTab(QWidget *parent);
+  void createTransactionsTab(QWidget *parent);
+  void createBanksTab(QWidget *parent);
 
-    // Action methods
-    void showAddClientDialog();
-    void showAddAccountDialog();
-    void showAddBankDialog();
-    void showAddTransactionDialog();
+  // Action methods
+  void showAddClientDialog();
+  void showAddAccountDialog();
+  void showAddBankDialog();
+  void showAddTransactionDialog();
 
-    // Data population methods
-    void populateClientsTable();
-    void updateClientAccountCount();
-    void populateAccountsTable();
-    void populateTransactionsTable();
-    void populateBanksTable();
+  // Data population methods
+  void populateClientsTable();
+  void updateClientAccountCount();
+  void populateAccountsTable();
+  void populateTransactionsTable();
+  void populateBanksTable();
 
-    void showEditClientDialog();
-    void deleteClient();
-    void showDepositDialog();
-    void showWithdrawDialog();
+  void showEditClientDialog();
+  void deleteClient();
+  void showDepositDialog();
+  void showWithdrawDialog();
+
+  void deleteAccount();
+  void showTransferDialog();
 };
 
-#endif // MAINWINDOW_H
+#endif  // MAINWINDOW_H
