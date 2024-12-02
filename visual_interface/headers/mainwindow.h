@@ -26,7 +26,9 @@ class MainWindow : public QMainWindow {
 
 public:
     MainWindow(QWidget *parent = nullptr);
-    ~MainWindow() = default;  // Add default destructor
+    ~MainWindow() = default;
+
+    Bank* GetRootBank(); // Добавляем метод для получения корневого банка
 
 private:
     // Models for different sections
@@ -45,6 +47,8 @@ private:
     std::vector<Bank> bankData;
     std::map<UserName, User> userInitMap;
 
+    Bank* currentBank; // Указатель на текущий банк
+
     // Setup methods
     void createMenuBar();
     void createClientsTab(QWidget *parent);
@@ -60,6 +64,7 @@ private:
 
     // Data population methods
     void populateClientsTable();
+    void updateClientAccountCount();
     void populateAccountsTable();
     void populateTransactionsTable();
     void populateBanksTable();

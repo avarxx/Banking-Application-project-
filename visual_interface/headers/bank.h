@@ -24,7 +24,7 @@ struct Bank {
   void AddMoney(BankAcc* ptr, size_t value, User& user);
   void TakeMoney(BankAcc* ptr, size_t value, User& user);
   Bank(const Bank& other) = default;
-  Bank(size_t limit, size_t credit_lim, size_t commission, size_t dep_period, const std::string& name);
+  Bank(size_t limit, size_t credit_lim, double commission, size_t dep_period, const std::string& name);
 };
 
 void PrintClientData(const User& user);

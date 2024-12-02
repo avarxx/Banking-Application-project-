@@ -1,11 +1,12 @@
 #include "../headers/bank.h"
 
-Bank::Bank(size_t limit, size_t credit_lim, size_t commission, size_t dep_period, const std::string& name)
-    : bank_name(name), 
+Bank::Bank(size_t limit, size_t credit_lim, double commission, size_t dep_period, const std::string& name)
+    : bank_name(name),
       unidentified_user_limit(limit),
-      default_deposit(Deposit(limit, dep_period, this)),
-      default_credit(Credit(limit, credit_lim, commission, this)),
-      default_debit_acc(DebitAcc(limit, this)) {}
+      default_deposit(Deposit(dep_period, this)),  // Передаем только период депозита и банк
+      default_credit(Credit(limit, credit_lim, commission, this)),  // Параметры для кредита
+      default_debit_acc(DebitAcc(this)) {}  // Передаем только банк
+
 
 bool Bank::UserHasAcc(const User& client) {
   return client_base.find(client) != client_base.end();
