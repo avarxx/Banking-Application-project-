@@ -2,6 +2,8 @@
 
 #include <QInputDialog>
 #include <QMessageBox>
+#include <QDebug> 
+
 
 MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent) {
   setWindowTitle("Banking System Management");
@@ -60,9 +62,9 @@ void MainWindow::createClientsTab(QWidget *parent) {
   buttonsLayout->addWidget(deleteClientBtn);
 
   clientsTableView = new QTableView();
-  clientsModel = new QStandardItemModel(0, 7, this);
+  clientsModel = new QStandardItemModel(0, 6, this);
   clientsModel->setHorizontalHeaderLabels(
-      {"Id", "Name", "Surname", "Address", "Passport", "Accounts", "Status"});
+      {"Name", "Surname", "Address", "Passport", "Accounts", "Status"});
   clientsTableView->setModel(clientsModel);
   
 
@@ -111,6 +113,12 @@ void MainWindow::showAddClientDialog() {
       return;
     }
 
+    // Validate passport - must be non-empty
+    if (passportEdit->text().isEmpty()) {
+      QMessageBox::warning(this, "Error", "Passport ID is required!");
+      return;
+    }
+
     try {
       User newUser(nameEdit->text().toStdString(),
                    surnameEdit->text().toStdString());
@@ -119,13 +127,13 @@ void MainWindow::showAddClientDialog() {
         newUser.GetAdress(addressEdit->text().toStdString());
       }
 
-      if (!passportEdit->text().isEmpty()) {
-        bool ok;
-        size_t passportId = passportEdit->text().toULong(&ok);
-        if (ok) {
-          newUser.GetPassportId(passportId);
-        }
+      bool ok;
+      size_t passportId = passportEdit->text().toULong(&ok);
+      if (!ok) {
+        QMessageBox::warning(this, "Error", "Invalid Passport ID!");
+        return;
       }
+      newUser.GetPassportId(passportId);
 
       UserName userName(newUser.client.name, newUser.client.surname);
       userInitMap[userName] = newUser;
@@ -143,6 +151,7 @@ void MainWindow::showAddClientDialog() {
 
   dialog.exec();
 }
+
 void MainWindow::showEditClientDialog() {
   bool ok;
   QString userIdInput = QInputDialog::getText(
@@ -250,6 +259,7 @@ void MainWindow::showEditClientDialog() {
 
   dialog.exec();  
 }
+
 void MainWindow::deleteClient() {
     // Убедимся, что модель корректно инициализирована
     if (!clientsModel) {
@@ -272,7 +282,7 @@ void MainWindow::deleteClient() {
     // Проверяем, есть ли клиент с таким паспортом в базе
     bool clientFound = false;
     for (int row = 0; row < clientsModel->rowCount(); ++row) {
-        QString clientPassport = clientsModel->item(row, 0)->text(); // Предполагаем, что паспорт в 0-й колонке
+        QString clientPassport = clientsModel->item(row, 3)->text(); // Предполагаем, что паспорт в 0-й колонке
 
         if (clientPassport == passport) {
             clientFound = true;
@@ -312,7 +322,6 @@ void MainWindow::deleteClient() {
                              "Client with the specified passport number was not found.");
     }
 }
-
 
 void MainWindow::createAccountsTab(QWidget *parent) {
   QVBoxLayout *layout = new QVBoxLayout(parent);
@@ -567,14 +576,11 @@ void MainWindow::showAddBankDialog() {
 }
 
 void MainWindow::populateClientsTable() {
-  clientsModel->setRowCount(0);  // Очистка таблицы перед добавлением новых данных
+  clientsModel->setRowCount(0);  // Clear the table before adding new data
 
   for (const auto &pair : userInitMap) {
     const User &user = pair.second;
     QList<QStandardItem *> row;
-
-    // ID
-    row.append(new QStandardItem(QString::number(user.passport_id)));
 
     // Name
     row.append(new QStandardItem(QString::fromStdString(user.client.name)));
@@ -590,21 +596,15 @@ void MainWindow::populateClientsTable() {
     row.append(new QStandardItem(
         user.HasId ? QString::number(user.passport_id) : "N/A"));
 
-    // // Accounts (например, можно показывать количество счетов)
-    // row.append(new QStandardItem(QString::number(user.accounts.size())));
+    // Accounts (placeholder)
+    row.append(new QStandardItem("0"));
 
-    // // Status (например, активен или нет)
-    // row.append(new QStandardItem(
-    //     user.IsActive ? "Active" : "Inactive"));
+    // Status
+    row.append(new QStandardItem(
+        user.HasId ? "Confirmed" : "Incomplete"));
 
     clientsModel->appendRow(row);
   }
-}
-
-
-void MainWindow::populateAccountsTable() {
-  // Implement similar to populateClientsTable when you have the account data
-  // structure
 }
 
 void MainWindow::populateTransactionsTable() {
