@@ -1,10 +1,8 @@
 #include "../headers/bank_account.h"
 
-Bank* Deposit::GetRootBank() {
-  return this->root_bank;
-}
-Deposit::Deposit(size_t the_period, size_t limit, Bank* the_bank):
-          suspicious_limit(limit), period(the_period), root_bank(the_bank) {}
+Bank* Deposit::GetRootBank() { return this->root_bank; }
+Deposit::Deposit(size_t the_period, size_t limit, Bank* the_bank)
+    : suspicious_limit(limit), period(the_period), root_bank(the_bank) {}
 void Deposit::TakeMoney(size_t value) {
   if (this->money < value) {
     std::cout << "U cant do it\n";
@@ -22,7 +20,7 @@ void Deposit::GetWithDrawCanceled(size_t value) {
   this->last_opertion = {Nothing, -1};
 }
 void Deposit::GetReplenishmentCanceled(size_t value) {
-  this->money -=value;
+  this->money -= value;
   this->last_opertion = {Nothing, -1};
 }
 void Deposit::CancelLastOperation() {
@@ -39,10 +37,9 @@ void Deposit::CancelLastOperation() {
   std::cout << "There were no operations yet!\n";
 }
 
-Bank* DebitAcc::GetRootBank() {
-  return this->root_bank;
-}
-DebitAcc::DebitAcc(size_t limit, Bank* the_bank): suspicious_limit(limit), root_bank(the_bank) {}
+Bank* DebitAcc::GetRootBank() { return this->root_bank; }
+DebitAcc::DebitAcc(size_t limit, Bank* the_bank)
+    : suspicious_limit(limit), root_bank(the_bank) {}
 void DebitAcc::TakeMoney(size_t value) {
   if (this->money < value) {
     std::cout << "U cant do it\n";
@@ -60,7 +57,7 @@ void DebitAcc::GetWithDrawCanceled(size_t value) {
   this->last_opertion = {Nothing, -1};
 }
 void DebitAcc::GetReplenishmentCanceled(size_t value) {
-  this->money -=value;
+  this->money -= value;
   this->last_opertion = {Nothing, -1};
 }
 void DebitAcc::CancelLastOperation() {
@@ -77,13 +74,14 @@ void DebitAcc::CancelLastOperation() {
   std::cout << "No operations yet!\n";
 }
 
-Bank* Credit::GetRootBank() {
-  return this->root_bank;
-}
+Bank* Credit::GetRootBank() { return this->root_bank; }
 
-Credit::Credit(size_t user_limit, size_t credit_lim, size_t percent, Bank* the_bank):
-        suspicious_limit(user_limit), credit_limit(credit_lim),
-        commission_frac_up(percent), root_bank(the_bank) {}
+Credit::Credit(size_t user_limit, size_t credit_lim, size_t percent,
+               Bank* the_bank)
+    : suspicious_limit(user_limit),
+      credit_limit(credit_lim),
+      commission_frac_up(percent),
+      root_bank(the_bank) {}
 int Credit::GetCommision(size_t value) {
   return (value * commission_frac_up) / commission_frac_down;
 }
@@ -100,7 +98,7 @@ void Credit::GetWithDrawCanceled(size_t value) {
   this->last_opertion = {Nothing, -1};
 }
 void Credit::GetReplenishmentCanceled(size_t value) {
-  this->money -=value;
+  this->money -= value;
   this->last_opertion = {Nothing, -1};
 }
 void Credit::CancelLastOperation() {

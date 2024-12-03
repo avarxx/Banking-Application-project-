@@ -71,7 +71,8 @@ void OpenCredit(std::vector<Bank>& data, const std::string& bank_name,
   client.total_money = start_capital;
   src.MakeBlancAcc(client);
 }
-void OpenCreditByHand(std::vector<Bank>& data, std::map<UserName, User>& user_init) {
+void OpenCreditByHand(std::vector<Bank>& data,
+                      std::map<UserName, User>& user_init) {
   std::string bank_name = "";
   std::string username = "";
   std::string usersurname = "";

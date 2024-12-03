@@ -29,41 +29,35 @@ class MainWindow : public QMainWindow {
   MainWindow(QWidget *parent = nullptr);
   ~MainWindow() = default;
 
-  Bank *GetRootBank();  // Добавляем метод для получения корневого банка
+  Bank *GetRootBank();
 
  private:
-  // Models for different sections
   QStandardItemModel *clientsModel;
   QStandardItemModel *accountsModel;
   QStandardItemModel *transactionsModel;
   QStandardItemModel *banksModel;
 
-  // Table views
   QTableView *clientsTableView;
   QTableView *accountsTableView;
   QTableView *transactionsTableView;
   QTableView *banksTableView;
 
-  // Main data structures
   std::vector<Bank> bankData;
   std::map<UserName, User> userInitMap;
 
-  Bank *currentBank;  // Указатель на текущий банк
+  Bank *currentBank;
 
-  // Setup methods
   void createMenuBar();
   void createClientsTab(QWidget *parent);
   void createAccountsTab(QWidget *parent);
   void createTransactionsTab(QWidget *parent);
   void createBanksTab(QWidget *parent);
 
-  // Action methods
   void showAddClientDialog();
   void showAddAccountDialog();
   void showAddBankDialog();
   void showAddTransactionDialog();
 
-  // Data population methods
   void populateClientsTable();
   void updateClientAccountCount();
   void populateAccountsTable();
@@ -76,7 +70,8 @@ class MainWindow : public QMainWindow {
   void showWithdrawDialog();
 
   void deleteAccount();
+  void deleteBank();
   void showTransferDialog();
 };
 
-#endif  // MAINWINDOW_H
+#endif

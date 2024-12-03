@@ -1,9 +1,10 @@
 #include <iostream>
 #include <map>
 #include <set>
-#include <string>
 #include <stdexcept>
+#include <string>
 #include <vector>
+
 #include "headers/function.h"
 
 int main() {
@@ -12,7 +13,7 @@ int main() {
   std::vector<User> users;
   std::map<UserName, User> user_init;
   std::cout << "Type help for commands list\n";
-  while(input != "exit") {
+  while (input != "exit") {
     std::cin >> input;
     if (input == "Help" || input == "help") {
       std::cout << "->init_bank: add new bank\n";
@@ -24,7 +25,7 @@ int main() {
       banks_list.push_back(InitionalizationByHand());
       std::cout << "Bank's added succesfully!\n";
     } else if (input == "banks" || input == "Banks") {
-      for (const auto& bank: banks_list) {
+      for (const auto& bank : banks_list) {
         std::cout << bank.bank_name << std::endl;
       }
     } else if (input == "add_user") {

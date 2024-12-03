@@ -1,18 +1,14 @@
 #pragma once
+#include <ctime> 
 #include <iostream>
 #include <map>
 #include <set>
-#include <string>
 #include <stdexcept>
+#include <string>
 #include <vector>
-#include <ctime>  // Для времени
 
 struct Bank;
-enum Operation : int {
-  Nothing = 1,
-  WithDraw = 2,
-  Replenishment = 3
-};
+enum Operation : int { Nothing = 1, WithDraw = 2, Replenishment = 3 };
 
 struct BankAcc {
   virtual Bank* GetRootBank() = 0;
@@ -25,44 +21,42 @@ struct BankAcc {
 };
 
 struct Deposit : BankAcc {
-    Bank* root_bank;
-    size_t period;       // Период депозита
-    size_t money = 0;
-    size_t startTime = 0;      // Время открытия депозита
-    std::pair<Operation, size_t> last_opertion = {Nothing, -1};
+  Bank* root_bank;
+  size_t period;  
+  size_t money = 0;
+  size_t startTime = 0;  
+  std::pair<Operation, size_t> last_opertion = {Nothing, -1};
 
-    Deposit(size_t the_period, Bank* the_bank);
-    Bank* GetRootBank();
-    bool canWithdraw() const;  // Проверка возможности снятия денег
-    void TakeMoney(size_t value);
-    void AddMoney(size_t value);
-    void GetWithDrawCanceled(size_t value);
-    void GetReplenishmentCanceled(size_t value);
-    void CancelLastOperation();
+  Deposit(size_t the_period, Bank* the_bank);
+  Bank* GetRootBank();
+  bool canWithdraw() const;  
+  void TakeMoney(size_t value);
+  void AddMoney(size_t value);
+  void GetWithDrawCanceled(size_t value);
+  void GetReplenishmentCanceled(size_t value);
+  void CancelLastOperation();
 };
-
 
 struct DebitAcc : BankAcc {
-    Bank* root_bank;
-    size_t money = 0;
-    std::pair<Operation, size_t> last_opertion = {Nothing, -1};
+  Bank* root_bank;
+  size_t money = 0;
+  std::pair<Operation, size_t> last_opertion = {Nothing, -1};
 
-    DebitAcc(Bank* the_bank);
-    Bank* GetRootBank();
-    void TakeMoney(size_t value);
-    void AddMoney(size_t value);
-    void GetWithDrawCanceled(size_t value);
-    void GetReplenishmentCanceled(size_t value);
-    void CancelLastOperation();
+  DebitAcc(Bank* the_bank);
+  Bank* GetRootBank();
+  void TakeMoney(size_t value);
+  void AddMoney(size_t value);
+  void GetWithDrawCanceled(size_t value);
+  void GetReplenishmentCanceled(size_t value);
+  void CancelLastOperation();
 };
-
 
 struct Credit : BankAcc {
   Bank* root_bank;
   Bank* GetRootBank();
-  const size_t suspicious_limit;
-  const size_t credit_limit;
-  const double commission = 0; // процент коммиссии
+  const size_t suspicious_limit; //убрал const 
+  const size_t credit_limit; //убрал const 
+  const double commission = 0;  //убрал const 
   Credit(size_t user_limit, size_t credit_lim, double percent, Bank* the_bank);
   int GetCommision(size_t value);
   std::pair<Operation, size_t> last_opertion = {Nothing, -1};

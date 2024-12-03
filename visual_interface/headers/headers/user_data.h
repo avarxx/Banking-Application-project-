@@ -2,14 +2,14 @@
 #include <iostream>
 #include <map>
 #include <set>
-#include <string>
 #include <stdexcept>
+#include <string>
 #include <vector>
 
 struct UserName {
   std::string name = "";
   std::string surname = "";
-  UserName& operator=(const UserName& other) = default; 
+  UserName& operator=(const UserName& other) = default;
   UserName() = default;
   UserName(const std::string& user_name, const std::string& user_surname);
 };

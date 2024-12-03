@@ -1,16 +1,13 @@
 #include "../headers/bank_account.h"
 
-// Deposit
 Deposit::Deposit(size_t the_period, Bank* the_bank)
     : root_bank(the_bank), period(the_period) {
-    startTime = std::time(nullptr);  // Устанавливаем текущее время как время открытия депозита
+  startTime = std::time(nullptr);
 }
-
 
 bool Deposit::canWithdraw() const {
   time_t currentTime = time(nullptr);
   double elapsedTime = difftime(currentTime, startTime);
-  // Проверяем, прошел ли срок депозита
   return elapsedTime >= period * 24 * 60 * 60;
 }
 
@@ -46,26 +43,21 @@ void Deposit::GetReplenishmentCanceled(size_t value) {
 
 void Deposit::CancelLastOperation() {
   if (last_opertion.first == WithDraw) {
-    AddMoney(last_opertion.second);  // Отмена снятия
+    AddMoney(last_opertion.second);
     last_opertion = {Nothing, -1};
     return;
   }
   if (last_opertion.first == Replenishment) {
-    TakeMoney(last_opertion.second);  // Отмена пополнения
+    TakeMoney(last_opertion.second);
     last_opertion = {Nothing, -1};
     return;
   }
   std::cout << "No operations to cancel.\n";
 }
 
-Bank* Deposit::GetRootBank() {
-    return this->root_bank;  // Явное использование this
-}
+Bank* Deposit::GetRootBank() { return this->root_bank; }
 
-
-// DebitAcc
-DebitAcc::DebitAcc(Bank* the_bank)
-    : root_bank(the_bank) {}
+DebitAcc::DebitAcc(Bank* the_bank) : root_bank(the_bank) {}
 
 void DebitAcc::TakeMoney(size_t value) {
   if (money < value) {
@@ -94,25 +86,22 @@ void DebitAcc::GetReplenishmentCanceled(size_t value) {
 
 void DebitAcc::CancelLastOperation() {
   if (last_opertion.first == WithDraw) {
-    AddMoney(last_opertion.second);  // Отмена снятия
+    AddMoney(last_opertion.second);
     last_opertion = {Nothing, -1};
     return;
   }
   if (last_opertion.first == Replenishment) {
-    TakeMoney(last_opertion.second);  // Отмена пополнения
+    TakeMoney(last_opertion.second);
     last_opertion = {Nothing, -1};
     return;
   }
   std::cout << "No operations to cancel.\n";
 }
 
-Bank* DebitAcc::GetRootBank() {
-    return this->root_bank;  // Явное использование this
-}
+Bank* DebitAcc::GetRootBank() { return this->root_bank; }
 
-
-// Credit
-Credit::Credit(size_t user_limit, size_t credit_lim, double percent, Bank* the_bank)
+Credit::Credit(size_t user_limit, size_t credit_lim, double percent,
+               Bank* the_bank)
     : root_bank(the_bank),
       suspicious_limit(user_limit),
       credit_limit(credit_lim),
@@ -120,7 +109,7 @@ Credit::Credit(size_t user_limit, size_t credit_lim, double percent, Bank* the_b
 
 int Credit::GetCommision(size_t value) {
   if (money >= 0) {
-    return 0;  // Комиссия отсутствует, если клиент в плюсе
+    return 0;
   }
   return (value * commission);
 }
@@ -156,18 +145,16 @@ void Credit::GetReplenishmentCanceled(size_t value) {
 
 void Credit::CancelLastOperation() {
   if (last_opertion.first == WithDraw) {
-    AddMoney(last_opertion.second);  // Отмена снятия
+    AddMoney(last_opertion.second);
     last_opertion = {Nothing, -1};
     return;
   }
   if (last_opertion.first == Replenishment) {
-    TakeMoney(last_opertion.second);  // Отмена пополнения
+    TakeMoney(last_opertion.second);
     last_opertion = {Nothing, -1};
     return;
   }
   std::cout << "No operations to cancel.\n";
 }
 
-Bank* Credit::GetRootBank() {
-    return this->root_bank;
-}
+Bank* Credit::GetRootBank() { return this->root_bank; }

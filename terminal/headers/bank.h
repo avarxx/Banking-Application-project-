@@ -2,9 +2,10 @@
 #include <iostream>
 #include <map>
 #include <set>
-#include <string>
 #include <stdexcept>
+#include <string>
 #include <vector>
+
 #include "bank_fields.h"
 
 struct Bank {
@@ -24,11 +25,12 @@ struct Bank {
   void AddMoney(BankAcc* ptr, size_t value, User& user);
   void TakeMoney(BankAcc* ptr, size_t value, User& user);
   Bank(const Bank& other) = default;
-  Bank(size_t limit, size_t credit_lim, size_t commission, size_t dep_period, std::string name);
+  Bank(size_t limit, size_t credit_lim, size_t commission, size_t dep_period,
+       std::string name);
 };
 
 void PrintClientData(const User& user);
 void GetTransfered(BankAcc* src, BankAcc* dest, size_t value, User& client);
 const std::string PrintAccType(const BankAcc& other);
 void GetTransfered(Bank* src_bank, Bank* dest_bank, size_t value,
-                  BankAcc* src_acc, BankAcc* dest_acc, User& user);
+                   BankAcc* src_acc, BankAcc* dest_acc, User& user);

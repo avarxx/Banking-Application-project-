@@ -1,9 +1,12 @@
 #include "../headers/bank.h"
 
-Bank::Bank(size_t limit, size_t credit_lim, size_t commission, size_t dep_period, std::string name):
-  default_deposit(Deposit(limit, dep_period, this)),
-  default_credit(Credit(limit, credit_lim, commission, this)),
-  default_debit_acc(DebitAcc(limit, this)), unidentified_user_limit(limit), bank_name(name) {}
+Bank::Bank(size_t limit, size_t credit_lim, size_t commission,
+           size_t dep_period, std::string name)
+    : default_deposit(Deposit(limit, dep_period, this)),
+      default_credit(Credit(limit, credit_lim, commission, this)),
+      default_debit_acc(DebitAcc(limit, this)),
+      unidentified_user_limit(limit),
+      bank_name(name) {}
 bool Bank::UserHasAcc(const User& client) {
   return this->client_base.find(client) != this->client_base.end();
 }
@@ -25,14 +28,14 @@ void PrintClientData(const User& user) {
   std::cout << "Name: " << user.client.name << "\n";
   std::cout << "Surname: " << user.client.surname << "\n";
   if (user.HasId) {
-  std::cout << "Passport ID: " << user.passport_id << "\n";
+    std::cout << "Passport ID: " << user.passport_id << "\n";
   } else {
-  std::cout << "No passport ID added\n";
+    std::cout << "No passport ID added\n";
   }
   if (user.WasAdressed) {
-  std::cout << "Address: " << user.address << "\n";
+    std::cout << "Address: " << user.address << "\n";
   } else {
-  std::cout << "No address added\n";
+    std::cout << "No address added\n";
   }
   std::cout << "Money: " << user.total_money << "\n";
 }
@@ -53,7 +56,8 @@ void Bank::ShowTransfers() {
     std::cout << "Transfer ID: " << transfer.ID << "\n";
     std::cout << "Amount of money transfered: " << transfer.value << "\n";
     std::cout << "Source: " << PrintAccType(*transfer.src) << "in bank ";
-    std::cout << transfer.src_bank->bank_name << "\nTo " << PrintAccType(*transfer.dest);
+    std::cout << transfer.src_bank->bank_name << "\nTo "
+              << PrintAccType(*transfer.dest);
     std::cout << " in bank " << transfer.dest_bank->bank_name << std::endl;
     std::cout << "Client data: \n";
     PrintClientData(transfer.client);
@@ -72,15 +76,16 @@ void Bank::TakeMoney(BankAcc* ptr, size_t value, User& user) {
   std::cout << "User don't have enough money\n";
 }
 void GetTransfered(Bank* src_bank, Bank* dest_bank, size_t value,
-                  BankAcc* src_acc, BankAcc* dest_acc, User& user) {
+                   BankAcc* src_acc, BankAcc* dest_acc, User& user) {
   if (!src_bank->UserHasAcc(user) || !dest_bank->UserHasAcc(user)) {
     std::cout << "Not valid transfer\n";
     return;
-  } try {
+  }
+  try {
     src_bank->TakeMoney(src_acc, value, user);
     dest_bank->AddMoney(dest_acc, value, user);
     user.total_money -= value;
-  } catch(...) {
+  } catch (...) {
     std::cout << "Not enough money on account\n";
     return;
   }
@@ -93,6 +98,7 @@ void Bank::CancelTransfer(size_t transfer_ID) {
       break;
     }
   }
-  GetTransfered(the_transfer->dest_bank, the_transfer->src_bank, the_transfer->value,
-                the_transfer->src, the_transfer->dest, the_transfer->client);
+  GetTransfered(the_transfer->dest_bank, the_transfer->src_bank,
+                the_transfer->value, the_transfer->src, the_transfer->dest,
+                the_transfer->client);
 }

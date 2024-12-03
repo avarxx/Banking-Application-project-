@@ -2,16 +2,12 @@
 #include <iostream>
 #include <map>
 #include <set>
-#include <string>
 #include <stdexcept>
+#include <string>
 #include <vector>
 
 struct Bank;
-enum Operation : int {
-  Nothing = 1,
-  WithDraw = 2,
-  Replenishment = 3
-};
+enum Operation : int { Nothing = 1, WithDraw = 2, Replenishment = 3 };
 struct BankAcc {
   virtual Bank* GetRootBank() = 0;
   virtual void TakeMoney(size_t value) = 0;
@@ -53,7 +49,7 @@ struct Credit : BankAcc {
   Bank* GetRootBank();
   const size_t suspicious_limit;
   const size_t credit_limit;
-  const size_t commission_frac_up = 0; // процент коммиссии
+  const size_t commission_frac_up = 0;  // процент коммиссии
   const size_t commission_frac_down = 100;
   Credit(size_t user_limit, size_t credit_lim, size_t percent, Bank* the_bank);
   int GetCommision(size_t value);

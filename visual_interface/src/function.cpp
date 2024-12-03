@@ -1,7 +1,8 @@
 #include "../headers/function.h"
+
 #include <iostream>
-#include <stdexcept>
 #include <limits>
+#include <stdexcept>
 
 Bank InitionalizationByHand() {
   std::string name;
@@ -65,79 +66,77 @@ Bank& FindBank(std::vector<Bank>& data, const std::string& name) {
 
 void OpenCredit(std::vector<Bank>& data, const std::string& bank_name,
                 User& client, size_t start_capital) {
-    try {
-        if (!BankExists(data, bank_name)) {
-            std::cout << "Error: Bank '" << bank_name << "' does not exist.\n";
-            return;
-        }
-
-        Bank& src = FindBank(data, bank_name);
-
-        if (src.UserHasAcc(client)) {
-            std::cout << "Error: " << client.client.name << " " << client.client.surname
-                      << " already has an account in " << bank_name << " bank.\n";
-            return;
-        }
-
-        if (!client.WasFullInit) {
-            std::cout << "Error: User must provide both address and passport ID before opening an account.\n";
-            std::cout << "Please complete user registration first.\n";
-            return;
-        }
-
-        // Убрана проверка start_capital < 0 (не имеет смысла для size_t)
-
-        client.total_money = start_capital;
-        src.MakeBlancAcc(client);
-
-        std::cout << "Successfully opened credit account for " 
-                  << client.client.name << " " << client.client.surname 
-                  << " in " << bank_name << " bank.\n";
+  try {
+    if (!BankExists(data, bank_name)) {
+      std::cout << "Error: Bank '" << bank_name << "' does not exist.\n";
+      return;
     }
-    catch (const std::exception& e) {
-        std::cout << "An unexpected error occurred: " << e.what() << std::endl;
+
+    Bank& src = FindBank(data, bank_name);
+
+    if (src.UserHasAcc(client)) {
+      std::cout << "Error: " << client.client.name << " "
+                << client.client.surname << " already has an account in "
+                << bank_name << " bank.\n";
+      return;
     }
+
+    if (!client.WasFullInit) {
+      std::cout << "Error: User must provide both address and passport ID "
+                   "before opening an account.\n";
+      std::cout << "Please complete user registration first.\n";
+      return;
+    }
+
+    client.total_money = start_capital;
+    src.MakeBlancAcc(client);
+
+    std::cout << "Successfully opened credit account for " << client.client.name
+              << " " << client.client.surname << " in " << bank_name
+              << " bank.\n";
+  } catch (const std::exception& e) {
+    std::cout << "An unexpected error occurred: " << e.what() << std::endl;
+  }
 }
 
-void OpenCreditByHand(std::vector<Bank>& data, std::map<UserName, User>& user_init) {
-    try {
-        std::string bank_name, username, usersurname;
-        size_t start_capital = 0;
+void OpenCreditByHand(std::vector<Bank>& data,
+                      std::map<UserName, User>& user_init) {
+  try {
+    std::string bank_name, username, usersurname;
+    size_t start_capital = 0;
 
-        std::cout << "Enter the bank name:\n";
-        std::cin >> bank_name;
+    std::cout << "Enter the bank name:\n";
+    std::cin >> bank_name;
 
-        std::cout << "Now enter client name and surname:\n";
-        std::cin >> username >> usersurname;
+    std::cout << "Now enter client name and surname:\n";
+    std::cin >> username >> usersurname;
 
-        auto user_it = user_init.find(UserName(username, usersurname));
-        if (user_it == user_init.end()) {
-            std::cout << "Error: Invalid user!\n";
-            std::cout << "You need to create a user account first using InitUserByHand().\n";
-            return;
-        }
-
-        User& the_user = user_it->second;
-
-        while (true) {
-            std::cout << "Enter the start capital (must be non-negative):\n";
-            std::cin >> start_capital;
-
-            if (std::cin.fail()) {
-                std::cin.clear();
-                std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
-                std::cout << "Invalid input. Please enter a valid number.\n";
-                continue;
-            }
-
-            // Убрана проверка start_capital < 0 (не имеет смысла для size_t)
-
-            break;
-        }
-
-        OpenCredit(data, bank_name, the_user, start_capital);
+    auto user_it = user_init.find(UserName(username, usersurname));
+    if (user_it == user_init.end()) {
+      std::cout << "Error: Invalid user!\n";
+      std::cout << "You need to create a user account first using "
+                   "InitUserByHand().\n";
+      return;
     }
-    catch (const std::exception& e) {
-        std::cout << "An unexpected error occurred: " << e.what() << std::endl;
+
+    User& the_user = user_it->second;
+
+    while (true) {
+      std::cout << "Enter the start capital (must be non-negative):\n";
+      std::cin >> start_capital;
+
+      if (std::cin.fail()) {
+        std::cin.clear();
+        std::cin.ignore(std::numeric_limits<std::streamsize>::max(), '\n');
+        std::cout << "Invalid input. Please enter a valid number.\n";
+        continue;
+      }
+
+      break;
     }
+
+    OpenCredit(data, bank_name, the_user, start_capital);
+  } catch (const std::exception& e) {
+    std::cout << "An unexpected error occurred: " << e.what() << std::endl;
+  }
 }
