@@ -1,56 +1,55 @@
-# Банковская система
+# Banking System
 
-## Описание
-### Кратко:
-Реализация системы для финансовых операций. Хранение данных.
-### Подробно:
-Есть несĸольĸо Банĸов, ĸоторые предоставляют финансовые услуги по операциям с деньгами. В банĸе есть Счета и Клиенты. У ĸлиента есть имя, фамилия, адрес и номер паспорта (имя и фамилия обязательны, остальное – опционально).
+## Description
+### Brief:
+Implementation of a system for financial operations and data storage.
+### Detailed:
+There are several Banks that provide financial services for money operations. Each bank has Accounts and Clients. A Client has a first name, last name, address, and passport number (first name and last name are mandatory, the rest are optional).
 
-Счета бывают трёх видов: 
-* Дебетовый счет
-* Депозит
-* Кредитный счет.  
+Accounts are of three types:
+* Debit Account
+* Deposit
+* Credit Account  
 
-Каждый счет принадлежит ĸаĸому-то ĸлиенту.  
-* **Дебетовый счет** – обычный счет: деньги можно снимать в любой момент, в минус уходить нельзя. Комиссий нет.
-* **Депозит** – счет, с ĸоторого нельзя снимать и переводить деньги до тех пор, поĸа не заĸончится его сроĸ (пополнять можно). Комиссий нет.
-* **Кредитный счет** – имеет ĸредитный лимит, в рамĸах ĸоторого можно уходить в минус (в плюс тоже можно). Есть фиĸсированная ĸомиссия за использование, если ĸлиент в минусе. 
+Each account belongs to a specific client.  
+* **Debit Account** – A regular account: money can be withdrawn at any time, but overdrafts are not allowed. No commission fees.
+* **Deposit** – An account from which money cannot be withdrawn or transferred until its term expires (it can be replenished). No commission fees.
+* **Credit Account** – Has a credit limit within which overdrafts are allowed (positive balances are also possible). There is a fixed commission fee for usage if the client has a negative balance.
 
-## Детали реализации
-Каждый счет предоставляет механизм снятия, пополнения и перевода денег (у каждого счёта есть идентифиĸатор). Клиент должен создаваётся по шагам. Сначала уĸазывается имя и фамилия (обязательно), затем адрес (можно пропустить и не уĸазывать), затем паспортные данные (можно пропустить и не уĸазывать). Если при создании счета у ĸлиента не уĸазаны адрес или номер паспорта, таĸой счет объявляется сомнительным, и ему запрещены операции снятия и перевода выше определенной суммы (у ĸаждого банĸа своё значение). Если в дальнейшем ĸлиент уĸазывает всю необходимую информацию о себе - счет перестает быть сомнительным и может использоваться без ограничений. Еще есть отмена транзаĸций. Если вдруг выяснится, что транзаĸция была совершена злоумышленниĸом, то таĸая транзаĸция будет отменена.
+## Implementation Details
+Each account provides mechanisms for withdrawing, depositing, and transferring money (each account has a unique identifier). A Client is created step by step. First, the first name and last name are specified (mandatory), then the address (optional), and finally passport details (optional). If a client does not provide an address or passport number when creating an account, such an account is considered suspicious, and withdrawals or transfers above a certain amount are prohibited (each bank sets its own limit). If the client later provides all the necessary information, the account is no longer considered suspicious and can be used without restrictions. Additionally, there is a feature to cancel transactions. If it is discovered that a transaction was conducted by a fraudster, such a transaction will be reversed.
 
-## Гайд по использованию проекта для управления счетами клиентов
+## User Guide for Managing Client Accounts
 
-Этот проект создан для удобного хранения и управления счетами клиентов. Он гибкий и прост в использовании, с множеством функций, которые облегчают выполнение различных операций. Вот что вы можете с ним делать:
+This project is designed for convenient storage and management of client accounts. It is flexible and easy to use, with numerous features that simplify performing various operations. Here's what you can do with it:
 
-### Типы счетов:
+### Account Types:
 
-Создавайте три разных типа счетов в зависимости от ваших потребностей.
+Create three different types of accounts depending on your needs.
 
-### Операции со счетами:
+### Account Operations:
 
-* Пополняйте счет.
+* Deposit funds into an account.
+* Withdraw money.
+* Transfer funds between your accounts.
+* Send money to other clients' accounts, even in other banks.
 
-* Снимайте деньги.
+### Fees and Restrictions:
 
-* Переводите средства между своими счетами.
+All operations consider fees and restrictions, ensuring accuracy and security.
 
-* Отправляйте деньги на счета других клиентов, даже в других банках.
+### Convenient Tools:
 
-### Комиссии и ограничения:
+Simple functions for displaying information and managing accounts make working with the project easy and intuitive.
 
-Все операции учитывают комиссии и ограничения, что гарантирует точность и безопасность.
+### Why Use This Project:
 
-### Удобные инструменты:
+The project is easily adaptable to your tasks and is suitable not only for storing account data but also for performing various financial operations. It is an excellent tool for managing client accounts and expanding your business functionality.
 
-Простые функции для вывода информации и управления счетами делают работу с проектом легкой и интуитивно понятной.
+## Build and Run
 
-### Почему стоит использовать этот проект:
-Проект легко адаптируется под ваши задачи и подходит не только для хранения данных о счетах, но и для выполнения различных финансовых операций. Это отличный инструмент для управления счетами клиентов и расширения функционала вашего бизнеса.
+Clone the repository and run the following commands in the terminal:
 
-## Сборка и запуск
-
-Надо клонировать репозиторий и ввести в терминале 
 ```
 cd terminal
 ./build.sh
